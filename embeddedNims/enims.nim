@@ -16,8 +16,9 @@ from compiler/pathutils import AbsoluteDir, AbsoluteFile
 import os, threadpool, times
 
 import apiImpl
-
-
+import std/tables
+from std/sequtils import zip
+import std/marshal
 # The path to the directory that contains the scripts, api declaration, and stdlib source
 let 
   scriptsDir = getAppDir() / "scripts"
@@ -138,9 +139,30 @@ proc reload* (script: Script) =
 
 
 proc getProc (script: Script, procName: string): PSym =
-    #strTableGet(script.mainModule.tab, getIdent(identCache, procName))
     echo "getProc",procName
-    discard
+    var z=getIdent(identCache, procName)
+    #echo z.id
+    echo "",z.id ," ", z.s,z.h
+    for i in script.graph.compilerprocs.data :
+      if not i.isNil:
+        echo i.name.s
+    echo ".."
+    for i in script.graph.typeInstCache.keys:
+      echo i
+
+      for  j in script.graph.typeInstCache[i]:
+        if not j.typ.isNil and not j.typ.sym.isNil:
+          echo $$(j.typ.sym.name)
+    
+    var s = $$script
+    echo s
+    z=getIdent(identCache, "Point")
+    var tmp = script.graph.packageTypes.strTableGet(z)
+    #echo $$tmp
+    #script.graph
+    #return strTableGet(script.mainModule,  procName)
+    
+    #discard
 
 
 proc hasProc* (script: Script, procName: string): bool =
