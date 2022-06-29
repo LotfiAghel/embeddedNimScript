@@ -10,7 +10,7 @@ from compiler/options import ConfigRef, newConfigRef
 from compiler/condsyms import initDefines, defineSymbol, undefSymbol
 from compiler/passes import registerPass, clearPasses, processModule
 from compiler/modules import makeModule, compileSystemModule, includeModule, importModule, connectCallbacks
-from compiler/ast import PSym, PNode, TSymFlag, initStrTable, newIntNode, newFloatNode, newStrNode, newNode, newTree, TNodeKind
+from compiler/ast import PSym, PNode, TSymFlag, initStrTable, newIntNode, newFloatNode, newStrNode, newNode, newTree, TNodeKind,IdGenerator,idGeneratorFromModule
 from compiler/pathutils import AbsoluteDir, AbsoluteFile
 
 import os, threadpool, times
@@ -23,8 +23,10 @@ let
   scriptsDir = getAppDir() / "scripts"
   configRef = newConfigRef()
   identCache = newIdentCache()
+var
+  idGenerator : IdGenerator #(module:1000,symId:1000,typeId:1000)
 
-configRef.libpath = AbsoluteDir(scriptsDir & "/stdlib")
+configRef.libpath = AbsoluteDir "/home/lotfi/programing/nim/Nim/lib/" # AbsoluteDir(scriptsDir & "/stdlib")
 configRef.implicitIncludes.add(scriptsDir / "api.nim")
 
 
@@ -90,29 +92,32 @@ proc compileScript* (filename: string, watch = false): Script =
   result.moduleName = filename.splitFile.name
 
   result.mainModule = makeModule(result.graph, result.filename)
+  idGenerator = idGeneratorFromModule(result.mainModule)
   incl(result.mainModule.flags, sfMainModule)
-  result.context = newCtx(result.mainModule, identCache, result.graph)
+  result.context = newCtx(result.mainModule, identCache, result.graph,idGenerator)
   result.context.mode = emRepl
 
   # Expose API
   result.exposeScriptApi()
 
   # Set context
-  setupGlobalCtx(result.mainModule, result.graph)
+  setupGlobalCtx(result.mainModule, result.graph,idGenerator)
   registerAdditionalOps(result.context)
 
   # Compile standard library
-  configRef.searchPaths.add(configRef.libpath)
-  configRef.searchPaths.add(AbsoluteDir configRef.libpath.string & " / pure")
+  #configRef.searchPaths.add(configRef.libpath)
+  #configRef.searchPaths.add(AbsoluteDir configRef.libpath.string & " / pure")
+  configRef.searchPaths.add(AbsoluteDir "/home/lotfi/programing/nim/Nim/")
+  configRef.searchPaths.add(AbsoluteDir "/home/lotfi/programing/nim/Nim/lib/")
   compileSystemModule(result.graph)
 
   # Compile script as module
-  if not processModule(result.graph, result.mainModule,
+  if not processModule(result.graph, result.mainModule,idGenerator,
       llStreamOpen(AbsoluteFile(result.filename), fmRead)).bool:
       echo "Failed to process `", result.filename, "`"
 
   # Cleanup
-  setupGlobalCtx(nil, result.graph)
+  setupGlobalCtx(nil, result.graph,idGenerator)
   cleanupNimscript(result.graph)
 
   # Watch the script file for changes
@@ -122,10 +127,10 @@ proc compileScript* (filename: string, watch = false): Script =
 proc reload* (script: Script) =
   setupNimscript(script.graph)
 
-  initStrTable(script.mainModule.tab)
-  setupGlobalCtx(script.mainModule, script.graph)
+  #initStrTable(script.mainModule.tab) TODO
+  setupGlobalCtx(script.mainModule, script.graph,idGenerator)
 
-  if not processModule(script.graph, script.mainModule,
+  if not processModule(script.graph, script.mainModule,idGenerator,
       llStreamOpen(AbsoluteFile script.filename, fmRead)):
       echo "Failed to process `", script.filename, "`"
 
@@ -133,7 +138,9 @@ proc reload* (script: Script) =
 
 
 proc getProc (script: Script, procName: string): PSym =
-    strTableGet(script.mainModule.tab, getIdent(identCache, procName))
+    #strTableGet(script.mainModule.tab, getIdent(identCache, procName))
+    echo "getProc",procName
+    discard
 
 
 proc hasProc* (script: Script, procName: string): bool =
@@ -148,7 +155,7 @@ proc call* (script: Script, procName: string,
       script.reload()
       script.watcher = spawn watch script.filename
   
-    setupGlobalCtx(script.mainModule, script.graph)
+    setupGlobalCtx(script.mainModule, script.graph,idGenerator)
 
     let prc = script.getProc(procName)
     assert(not prc.isNil, "\nUnable to locate proc `" & procName & "` in `" & script.filename & "`")

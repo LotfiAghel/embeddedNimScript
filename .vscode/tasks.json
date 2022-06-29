@@ -1,0 +1,37 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "nimbleBuild2",
+            "command": "nimble",
+            "args": [
+                "build",
+                "-g",
+                "--debugger:native",
+                "--threads:on",
+                "-o:${workspaceRoot}/test"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "type": "shell"
+        },
+
+        {
+            "label": "nim: build current file (for debugging)",
+            "command": "nim",
+            "args": [
+                "compile",
+                "-g",
+                "--debugger:native",
+                "--threads:on",
+                "-o:${workspaceRoot}/bin/${fileBasenameNoExtension}",
+                "${relativeFile}"
+            ],
+            "options": {
+                "cwd": "${workspaceRoot}"
+            },
+            "type": "shell",
+        }
+    ]
+}

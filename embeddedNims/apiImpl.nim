@@ -15,7 +15,7 @@ from compiler/ast import
     # Getting values from PNodes
     getInt, getFloat,
     # Creating new PNodes
-    newNode, newFloatNode, addSon, newTree
+    newNode, newFloatNode, newTree
 
 from os import splitFile
 from threadpool import FlowVar
@@ -35,7 +35,9 @@ type
 
 
 proc exposeScriptApi* (script: Script) =
+    
     template expose (procName, procBody: untyped) {.dirty.} =
+        echo script.moduleName & "." & astToStr(procName)
         script.context.registerCallback script.moduleName & "." & astToStr(procName),
             proc (a: VmArgs) =
                 procBody
@@ -43,10 +45,12 @@ proc exposeScriptApi* (script: Script) =
     expose add:
         # We need to use procs like getInt to retrieve the argument values from VmArgs
         # Instead of using the return statement we need to use setResult
+        echo "---------------add----------"
         setResult(a,
             getInt(a, 0) +
             getInt(a, 1))
 
     expose modifyState:
+        echo "---------------modifyState----------"
         modifyMe = getString(a, 0)
         echo "`", script.moduleName, "` has changed state.modifyMe to `", modifyMe, "`"

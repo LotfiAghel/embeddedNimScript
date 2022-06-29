@@ -3,7 +3,7 @@ from compiler/ast import getInt
 
 import embeddedNims/enims
 import state
-
+import system
 from os import sleep
 
 
@@ -13,7 +13,8 @@ proc main =
     let
         # Calls the nim proc add (see apiImpl), printing the result of 8 + 12
         script1 = compileScript("script1.nims")
-
+    echo "script1 ",modifyMe
+    let
         # Can change state.modifyMe through its update proc
         script2 = compileScript("script2.nims")
 

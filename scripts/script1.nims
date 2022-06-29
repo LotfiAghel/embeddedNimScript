@@ -1,5 +1,6 @@
-
+echo "salam "
 let args = [8, 12]
+modifyState("cats0")
 echo "From NIMS to NIM and back:    ", args[0], " + ", args[1], " = ",
     add(args[0], args[1])
 
