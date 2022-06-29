@@ -1,3 +1,4 @@
+#this usfull repo not work correctly in new Nim compiler I WILL FIX IT
 # embeddedNimScript
 Using NimScript as embedded scripting language, enabling hot loading among other neat things.
 
